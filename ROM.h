@@ -1,6 +1,6 @@
 #ifndef ROM_H
 #define ROM_H
-#endif
+
 
 #include "types.h"
 
@@ -9,9 +9,12 @@
 
 #ifndef ROM_SIZE
 #define ROM_SIZE 0x8000
+#define HEADERED_ROM_SIZE 0x8010
 #endif
 
 typedef byte* ROM;
 
 ROM InitROM();
 void PrintROM(ROM rom);
+
+#endif
