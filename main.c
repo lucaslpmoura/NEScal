@@ -30,8 +30,12 @@ byte *readFileAsBytes();
 void copyByteArray(byte *inArray, byte *outArray, size_t size, size_t offset);
 int convertToSignedVal(byte num);
 
+addr getAbsoluteAddress();
+
 void push(byte value);
 byte pull();
+
+void asl(addr addr, byte *value);
 
 int main(int argv, char **argc)
 {
@@ -338,6 +342,35 @@ void emulate(CPU *cpu)
         cycles = 4;
         break;
 
+    case PHP: {
+        byte value = 0;
+        value += (byte)(cpu->CRY ? 0x01 : 0);
+        value += (byte)(cpu->ZER ? 0x02 : 0);
+        value += (byte)(cpu->IND ? 0x04 : 0);
+        value += (byte)(cpu->DEC ? 0x08 : 0);
+        value += 0x10;
+        value += 0x20;
+        value += (byte)(cpu->OVF ? 0x40 : 0);
+        value += (byte)(cpu->NEG ? 0x80 : 0);
+        push(value);
+
+        cycles = 3;
+        break;
+    }
+    case PLP: {
+        byte value = pull();
+
+        cpu->CRY = (value & 0x01) != 0;
+        cpu->ZER = (value & 0x02) != 0;
+        cpu->IND = (value & 0x04) != 0;
+        cpu->DEC = (value & 0x08) != 0;
+        cpu->OVF = (value & 0x40) != 0;
+        cpu->NEG = (value & 0x80) != 0;
+
+        cycles = 3;
+        break;
+    }
+
     // Subroutine Instructions
     case JSR: {
         byte low = read(cpu->PC);
@@ -461,6 +494,21 @@ void emulate(CPU *cpu)
         cycles = 2;
         break;
 
+    // Arithimetic Instructions
+
+    case ASL_RA:
+        asl(NULL, &cpu->A);
+        cycles = 2;
+        break;
+    case ASL_AB: {
+        addr addr = getAbsoluteAddress();
+        byte value = read(addr);
+        asl(addr,&value);
+        
+        cycles = 6;
+        break;
+    }
+
     default:
         printf("Unknown instruction: %x.\n", opcode);
         // exit(1);
@@ -531,6 +579,15 @@ void reset()
     cpu->PC = (addr)((PCH * 0x100) + PCL);
 }
 
+addr getAbsoluteAddress(){
+    addr absAddr = read(cpu->PC);
+    cpu->PC++;
+    absAddr = (addr)(read(cpu->PC) << 8 | absAddr);
+    return absAddr;
+}
+
+
+
 void push(byte value){
     addr addr = (STACK_START_ADDR + cpu->SP);
     write(addr, value);
@@ -593,4 +650,20 @@ int convertToSignedVal(byte num)
 {
     int signedVal = num > 127 ? num - 256 : num;
     return signedVal;
+}
+
+
+void asl(addr addr, byte *value){
+    printf("Executing: ASL on value: %x\n", *value);
+    cpu->CRY = value > 127;
+
+    *value <<= 1;
+
+    cpu->ZER = *value == 0;
+    cpu->NEG = *value > 127;
+
+    if(addr != NULL){
+        write(addr, *value);
+    }
+
 }

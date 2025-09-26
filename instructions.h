@@ -36,14 +36,19 @@
 #define PHA 0x48 // Push A
 #define PLA 0x68 // Pull A
 
+#define PHP 0x08 // Push Processor Flags
+#define PLP 0x28 // Pull Processor Flags
+
 
 #define JSR 0x20 // Jump to Subroutine
 #define RTS 0x60 // Return From Subroutine
+
 
 #define INX 0xE8 // Increment X
 #define DEX 0xCA // Decrement X
 #define INY 0xC8 // Increment Y
 #define DEY 0x88 // Decrement Y
+
 
 #define TAX 0xAA // Transfer A to X
 #define TXA 0x8A // Transfer X to A
@@ -52,6 +57,7 @@
 #define TXS 0x9A // Transfer X to SP
 #define TSX 0xBA // Transfer SP To X
 
+
 #define SEC 0x38 // Set Carry Flag
 #define CLC 0x18 // Clear Carry Flag
 #define CLV 0xB8 // Clear Overflow Flag
@@ -59,3 +65,6 @@
 #define CLI 0x58 // Clear Interrupt Disable Flag
 #define SED 0xF8 // Set Decimal Flag
 #define CLD 0xD8 // Clear Decimal Flag
+
+#define ASL_RA 0x0A // Arithimetic Shift Left, A Register
+#define ASL_AB 0x0E // Arithimetic Shift Left, Absolute

@@ -1,7 +1,8 @@
 #include "CPU.h"
 
-CPU *InitCPU(){
-    CPU *cpu = (CPU*) malloc(sizeof(CPU));
+CPU *InitCPU()
+{
+    CPU *cpu = (CPU *)malloc(sizeof(CPU));
 
     // Pointes
     cpu->PC = 0x00; // Program Count
@@ -12,7 +13,7 @@ CPU *InitCPU(){
     cpu->X = 0x00;
     cpu->Y = 0x00;
 
-    //Flags
+    // Flags
     cpu->HLT = 0;
     cpu->CRY = 0;
     cpu->ZER = 0;
