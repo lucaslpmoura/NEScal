@@ -7,7 +7,12 @@
 #define NOP 0xEA // No Operation
 
 #define LDX_IM 0xA2 // Load X, Immediate
+#define LDX_ZP 0xA6 // Load X, Zero Page
+#define LDX_AB 0xAE // Load X, Absolute
+
 #define LDY_IM 0xA0 // Load Y, Immediate
+#define LDY_ZP 0xA4 // Load Y, Zero Page
+#define LDY_AB 0xAC // Load Y, Absolute
 
 #define LDA_IM 0xA9 // Load A, Immediate
 #define LDA_ZP 0xA5 // Load A, Zero Page
@@ -39,7 +44,7 @@
 #define PHP 0x08 // Push Processor Flags
 #define PLP 0x28 // Pull Processor Flags
 
-
+#define JMP 0x4C // Jump
 #define JSR 0x20 // Jump to Subroutine
 #define RTS 0x60 // Return From Subroutine
 
@@ -66,5 +71,11 @@
 #define SED 0xF8 // Set Decimal Flag
 #define CLD 0xD8 // Clear Decimal Flag
 
+
 #define ASL_RA 0x0A // Arithimetic Shift Left, A Register
 #define ASL_AB 0x0E // Arithimetic Shift Left, Absolute
+#define ASL_ZP 0x06 // Arithimetic Shift Left, Zero Page
+
+#define ROL_RA 0x2A // Rotate Left, A Register
+#define ROL_AB 0x2E // Rotate Left, Absolute
+#define ROL_ZP 0x26 // Rotate Left, Zero Page

@@ -8,7 +8,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-char *romFileName = "./tst/1_ReadWrite.nes";
+#define STEPPING_MODE 1
+
+char *romFileName = "./tst/1_Example.nes";
 
 CPU *cpu;
 
@@ -35,6 +37,9 @@ addr getAbsoluteAddress();
 void push(byte value);
 byte pull();
 
+void load(byte *reg, byte value);
+int branch(bool flag);
+void transfer(byte *sourceRegister, byte *destinationRegister, bool changeFlags);
 void asl(addr addr, byte *value);
 
 int main(int argv, char **argc)
@@ -60,8 +65,12 @@ void run(CPU *cpu)
 {
     while (!cpu->HLT)
     {
-        printf("Press any key to run.");
-        getchar();
+        if (STEPPING_MODE)
+        {
+            printf("Press any key to run.");
+            getchar();
+        }
+
         emulate(cpu);
     }
     printf("A: %x, X: %x, Y: %x\n", cpu->A, cpu->X, cpu->Y);
@@ -86,249 +95,165 @@ void emulate(CPU *cpu)
     case NOP:
         cycles = 2;
         break;
-    
+
     // Load Register Instructions
+    // Load X
     case LDX_IM:
-        cpu->X = read(cpu->PC);
+        load(&cpu->X, read(cpu->PC));
 
-        cpu->ZER = cpu->X == 0;
-        cpu->NEG = cpu->X > 127;
-
-        cpu->PC++;
         cycles = 2;
+        cpu->PC++;
         break;
+    case LDX_ZP:
+    {
+        load(&cpu->X, read(getZeroPageAddress()));
+
+        cycles = 3;
+        break;
+    }
+    case LDX_AB:
+    {
+        load(&cpu->X, read(getAbsoluteAddress()));
+
+        cycles = 4;
+        break;
+    }
+
+    // Load Y
     case LDY_IM:
-        cpu->Y = read(cpu->PC);
-
-        cpu->ZER = cpu->Y == 0;
-        cpu->NEG = cpu->Y > 127;
+        load(&cpu->Y, read(cpu->PC));
 
         cpu->PC++;
         cycles = 2;
         break;
+    case LDY_ZP:
+    {
+        load(&cpu->Y, read(getZeroPageAddress()));
+
+        cycles = 3;
+        break;
+    }
+    case LDY_AB:
+    {
+        load(&cpu->Y, read(getAbsoluteAddress()));
+
+        cycles = 4;
+        break;
+    }
 
     // Load A
     case LDA_IM:
-        cpu->A = read(cpu->PC);
-
-        cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        load(&cpu->A, read(cpu->PC));
 
         cpu->PC++;
         cycles = 2;
         break;
     case LDA_ZP:
     {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-        cpu->A = read(temp);
-
-        cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        load(&cpu->A, read(getZeroPageAddress()));
 
         cycles = 3;
         break;
     }
     case LDA_AB:
     {
-        byte temp_low = read(cpu->PC);
-        cpu->PC++;
-        byte temp_high = read(cpu->PC);
-        cpu->PC++;
-        addr addr = (temp_high * 256 + temp_low);
-        cpu->A = read(addr);
-
-        cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        load(&cpu->A, read(getAbsoluteAddress()));
 
         cycles = 4;
         break;
     }
 
     // Store Instructions
+    // Register X
     case STX_ZP:
     {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-        write(temp, cpu->X);
+        write(getZeroPageAddress(), cpu->X);
         cycles = 3;
         break;
     }
     case STX_AB:
     {
-        byte temp_low = read(cpu->PC);
-        cpu->PC++;
-        byte temp_high = read(cpu->PC);
-        cpu->PC++;
-        addr addr = (temp_high * 256 + temp_low);
-        write(addr, cpu->X);
+        write(getAbsoluteAddress(), cpu->X);
         cycles = 4;
         break;
     }
+    // Register Y
     case STY_ZP:
     {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-        write(temp, cpu->Y);
+        write(getZeroPageAddress(), cpu->Y);
         cycles = 3;
         break;
     }
     case STY_AB:
     {
-        byte temp_low = read(cpu->PC);
-        cpu->PC++;
-        byte temp_high = read(cpu->PC);
-        cpu->PC++;
-        addr addr = (temp_high * 256 + temp_low);
-        write(addr, cpu->Y);
+        write(getAbsoluteAddress(), cpu->Y);
+
         cycles = 4;
         break;
     }
+    // Register A
     case STA_ZP:
     {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-        write(temp, cpu->A);
+        write(getZeroPageAddress(), cpu->A);
+
         cycles = 3;
         break;
     }
     case STA_AB:
     {
-        byte temp_low = read(cpu->PC);
-        cpu->PC++;
-        byte temp_high = read(cpu->PC);
-        cpu->PC++;
-        addr addr = (temp_high * 256 + temp_low);
-        write(addr, cpu->A);
+        write(getAbsoluteAddress(), cpu->A);
+
         cycles = 4;
         break;
     }
 
     // Branch Instructions
-    case BPL: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-
-        if (!cpu->NEG)
-        {
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else
-        {
-            cycles = 2;
-        }
-        break;
-    } 
-    case BMI: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-
-        if (cpu->NEG){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BPL:
+    {
+        cycles = branch(!cpu->NEG);
         break;
     }
-        
-
-    case BVC: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-
-        if (!cpu->OVF){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BMI:
+    {
+        cycles = branch(cpu->NEG);
         break;
     }
-    case BVS: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
 
-        if (cpu->OVF){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BVC:
+    {
+        cycles = branch(!cpu->OVF);
         break;
     }
-        
-    
-    case BCC: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-
-        if (!cpu->CRY){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BVS:
+    {
+        cycles = branch(cpu->OVF);
         break;
     }
-    case BCS: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
 
-        if (cpu->CRY){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BCC:
+    {
+        cycles = branch(!cpu->CRY);
         break;
     }
-        
-
-
-    case BNE: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
-
-        if (!cpu->ZER){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BCS:
+    {
+        cycles = branch(cpu->CRY);
         break;
     }
-        
-    case BEQ: {
-        byte temp = read(cpu->PC);
-        cpu->PC++;
 
-        if (cpu->ZER){
-            int signedVal = convertToSignedVal(temp);
-            cpu->PC += signedVal;
-            cycles = 3;
-        }
-        else{
-            cycles = 2;
-        }
+    case BNE:
+    {
+        cycles = branch(!cpu->ZER);
         break;
     }
-    
-    //Stack Instrcutions
+
+    case BEQ:
+    {
+        cycles = branch(cpu->ZER);
+        break;
+    }
+
+    // Stack Instrcutions
     case PHA:
         push(cpu->A);
         cycles = 3;
@@ -337,12 +262,13 @@ void emulate(CPU *cpu)
         cpu->A = pull();
 
         cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        cpu->NEG = cpu->A > 0x7F;
 
         cycles = 4;
         break;
 
-    case PHP: {
+    case PHP:
+    {
         byte value = 0;
         value += (byte)(cpu->CRY ? 0x01 : 0);
         value += (byte)(cpu->ZER ? 0x02 : 0);
@@ -357,7 +283,8 @@ void emulate(CPU *cpu)
         cycles = 3;
         break;
     }
-    case PLP: {
+    case PLP:
+    {
         byte value = pull();
 
         cpu->CRY = (value & 0x01) != 0;
@@ -371,21 +298,31 @@ void emulate(CPU *cpu)
         break;
     }
 
-    // Subroutine Instructions
-    case JSR: {
+    // Jump Instructions
+    case JMP:
         byte low = read(cpu->PC);
         cpu->PC++;
         byte high = read(cpu->PC);
 
-        push((byte) cpu->PC/256); // PC High Byte
-        push((byte) cpu->PC); // PC Low Byte
-        
-        cpu->PC = (addr) (high*256 + low);
+        cpu->PC = (addr)(high * 256 + low);
+        cycles = 6;
+        break;
+    case JSR:
+    {
+        byte low = read(cpu->PC);
+        cpu->PC++;
+        byte high = read(cpu->PC);
+
+        push((byte)cpu->PC / 256); // PC High Byte
+        push((byte)cpu->PC);       // PC Low Byte
+
+        cpu->PC = (addr)(high * 256 + low);
 
         cycles = 6;
         break;
     }
-    case RTS: {
+    case RTS:
+    {
         byte low = pull();
         byte high = pull();
 
@@ -396,7 +333,7 @@ void emulate(CPU *cpu)
         break;
     }
 
-    // Increment / Decrement Instructinos
+        // Increment / Decrement Instructinos
 
     case INX:
         cpu->X++;
@@ -405,7 +342,7 @@ void emulate(CPU *cpu)
     case DEX:
         cpu->X--;
         break;
-    
+
     case INY:
         cpu->Y++;
         cycles = 2;
@@ -416,50 +353,38 @@ void emulate(CPU *cpu)
         break;
 
     // Transfer Instructions
-    
-    case TAX:
-        cpu->X = cpu->A;
 
-        cpu->ZER = cpu->X == 0;
-        cpu->NEG = cpu->X > 127;
+    case TAX:
+        transfer(&cpu->A, &cpu->X, true);
 
         cycles = 2;
         break;
     case TXA:
-        cpu->A = cpu->X;
-
-        cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        transfer(&cpu->X, &cpu->A, true);
 
         cycles = 2;
         break;
     case TAY:
-        cpu->Y = cpu->A;
-
-        cpu->ZER = cpu->Y == 0;
-        cpu->NEG = cpu->Y > 127;
+        transfer(&cpu->A, &cpu->Y, true);
 
         cycles = 2;
         break;
     case TYA:
-        cpu->A = cpu->Y;
-
-        cpu->ZER = cpu->A == 0;
-        cpu->NEG = cpu->A > 127;
+        transfer(&cpu->Y, &cpu->A, true);
 
         cycles = 2;
         break;
     case TXS:
-        cpu->SP = cpu->X;
+        /*
+        The flags of the 6502 register are not checked on
+        SP operations.
+        */
+        transfer(&cpu->X, &cpu->SP, false);
 
         cycles = 2;
         break;
     case TSX:
-        cpu->X = cpu->SP;
-
-
-        cpu->ZER = cpu->X == 0;
-        cpu->NEG = cpu->X > 127;
+        transfer(&cpu->SP, &cpu->X, true);
 
         cycles = 2;
         break;
@@ -495,20 +420,52 @@ void emulate(CPU *cpu)
         break;
 
     // Arithimetic Instructions
-
+    // Arithimetic Shift Left
     case ASL_RA:
         asl(NULL, &cpu->A);
         cycles = 2;
         break;
-    case ASL_AB: {
+    case ASL_AB:
+    {
         addr addr = getAbsoluteAddress();
         byte value = read(addr);
-        asl(addr,&value);
-        
+        asl(addr, &value);
+
         cycles = 6;
         break;
     }
+    case ASL_ZP:
+    {
+        addr addr = getZeroPageAddress();
+        byte value = read(addr);
+        asl(addr, &value);
 
+        cycles = 5;
+        break;
+    }
+
+    //Rotate Left
+    case ROL_RA:{
+        rol(NULL, &cpu->A);
+        cycles = 2;
+        break;
+    }
+    case ROL_AB:{
+        addr addr = getAbsoluteAddress();
+        byte value = read(addr);
+        rol(addr, &value);
+
+        cycles = 6;
+        break;
+    }
+    case ROL_ZP: {
+        addr addr = getZeroAddress();
+        byte value = read(addr);
+        rol(addr, &value);
+
+        cycles = 5;
+        break;
+    }
     default:
         printf("Unknown instruction: %x.\n", opcode);
         // exit(1);
@@ -579,22 +536,30 @@ void reset()
     cpu->PC = (addr)((PCH * 0x100) + PCL);
 }
 
-addr getAbsoluteAddress(){
+addr getAbsoluteAddress()
+{
     addr absAddr = read(cpu->PC);
     cpu->PC++;
     absAddr = (addr)(read(cpu->PC) << 8 | absAddr);
     return absAddr;
 }
 
+addr getZeroPageAddress()
+{
+    byte temp = read(cpu->PC);
+    cpu->PC++;
+    return temp;
+}
 
-
-void push(byte value){
+void push(byte value)
+{
     addr addr = (STACK_START_ADDR + cpu->SP);
     write(addr, value);
     cpu->SP--;
 }
 
-byte pull(){
+byte pull()
+{
     cpu->SP++;
     addr addr = (STACK_START_ADDR + cpu->SP);
     byte value = read(addr);
@@ -648,22 +613,76 @@ void printMemory(byte *memory, size_t start, size_t end)
 
 int convertToSignedVal(byte num)
 {
-    int signedVal = num > 127 ? num - 256 : num;
+    int signedVal = num > 0x7F ? num - 256 : num;
     return signedVal;
 }
 
+// Instructions functions
 
-void asl(addr addr, byte *value){
+void load(byte *reg, byte value)
+{
+    *reg = value;
+
+    cpu->ZER = *reg == 0;
+    cpu->NEG = *reg > 0x7F;
+}
+
+int branch(bool flag){
+    int cycles = 0;
+    byte temp = read(cpu->PC);
+    cpu->PC++;
+
+    if (flag){
+        int signedVal = convertToSignedVal(temp);
+        cpu->PC += signedVal;
+        cycles = 3;
+    }
+    else{
+        cycles = 2;
+    }
+    return cycles;
+}
+
+void transfer(byte *sourceRegister, byte *destinationRegister, bool changeFlags){
+    *destinationRegister = *sourceRegister;
+
+    if(changeFlags) {
+        cpu->ZER = *destinationRegister == 0;
+        cpu->NEG = *destinationRegister > 0x7F;
+    }
+}
+
+void asl(addr addr, byte *value)
+{
     printf("Executing: ASL on value: %x\n", *value);
-    cpu->CRY = value > 127;
+    cpu->CRY = *value > 0x7F;
 
     *value <<= 1;
 
     cpu->ZER = *value == 0;
-    cpu->NEG = *value > 127;
+    cpu->NEG = *value > 0x7F;
 
-    if(addr != NULL){
+    if (addr != NULL)
+    {
         write(addr, *value);
     }
+}
 
+void rol(addr addr, byte *value){
+    printf("Executing: ROL on value: %x\n", *value);
+
+    bool newCarry = value > 0x7F;
+
+    *value <<= 1;
+    if(cpu->CRY){
+        *value |= 0b00000001;
+    }
+
+    cpu->ZER = *value == 0;
+    cpu->NEG = *value > 0x7F;
+    cpu->CRY = newCarry;
+
+    if(addr != NULL){
+        write(addr, *value);  
+    }
 }

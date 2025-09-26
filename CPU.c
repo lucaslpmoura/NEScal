@@ -5,7 +5,7 @@ CPU *InitCPU()
     CPU *cpu = (CPU *)malloc(sizeof(CPU));
 
     // Pointes
-    cpu->PC = 0x00; // Program Count
+    cpu->PC = 0x0000; // Program Count
     cpu->SP = 0x00; // Stack Pointer
 
     // Registers
