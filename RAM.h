@@ -4,7 +4,7 @@
 
 #include "types.h"
 #include "stdio.h"
-
+#include <stdlib.h>
 
 #define RAM_SIZE 0x800
 #define STACK_START_ADDR 0x100

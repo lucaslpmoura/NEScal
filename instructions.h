@@ -1,10 +1,15 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
-#endif
 
 
 #define HTL 0x02 // Halt
 #define NOP 0xEA // No Operation
+
+
+
+#define BRK 0x00 // Break
+#define RTI 0x40 // Return from Interrupt
+
 
 #define LDX_IM 0xA2 // Load X, Immediate
 #define LDX_ZP 0xA6 // Load X, Zero Page
@@ -28,6 +33,7 @@
 #define STA_AB 0x8D // Store A, Absolute
 
 
+
 #define BPL 0x10 // Branch on Plus  (!NEG / >= 0)
 #define BMI 0x30 // Branch on Minues (NEG/ < 0)
 #define BVC 0x50 // Branch on Overflow Clear (!OVF)
@@ -38,21 +44,30 @@
 #define BEQ 0xF0 // Branch on Equal (ZER / == 0)
 
 
+
 #define PHA 0x48 // Push A
 #define PLA 0x68 // Pull A
 
 #define PHP 0x08 // Push Processor Flags
 #define PLP 0x28 // Pull Processor Flags
 
+
+
 #define JMP 0x4C // Jump
 #define JSR 0x20 // Jump to Subroutine
 #define RTS 0x60 // Return From Subroutine
 
 
+
+#define INC_AB 0xEE // Increment, Absolute
+#define INC_ZP 0xE6 // Increment, Zero Page
+#define DEC_AB 0xCE // Decrement, Absolute
+#define DEC_ZP 0xC6 // Decrement, Zero Page
 #define INX 0xE8 // Increment X
 #define DEX 0xCA // Decrement X
 #define INY 0xC8 // Increment Y
 #define DEY 0x88 // Decrement Y
+
 
 
 #define TAX 0xAA // Transfer A to X
@@ -61,6 +76,7 @@
 #define TYA 0x98 // Trasnfer Y to A
 #define TXS 0x9A // Transfer X to SP
 #define TSX 0xBA // Transfer SP To X
+
 
 
 #define SEC 0x38 // Set Carry Flag
@@ -72,10 +88,58 @@
 #define CLD 0xD8 // Clear Decimal Flag
 
 
+
 #define ASL_RA 0x0A // Arithimetic Shift Left, A Register
 #define ASL_AB 0x0E // Arithimetic Shift Left, Absolute
 #define ASL_ZP 0x06 // Arithimetic Shift Left, Zero Page
+#define LSR_RA 0x4A // Logical Shift Right, A Register
+#define LSR_AB 0x4E // Logical Shift Right, Absolute
+#define LSR_ZP 0x46 // Logical Shift Right, Zero Page
 
 #define ROL_RA 0x2A // Rotate Left, A Register
 #define ROL_AB 0x2E // Rotate Left, Absolute
 #define ROL_ZP 0x26 // Rotate Left, Zero Page
+#define ROR_RA 0x6A // Rotate Right, A Register
+#define ROR_AB 0x6E // Rotate Right, Absolute
+#define ROR_ZP 0x66 // Rotate Right, Zero Pate
+
+
+
+#define ADC_IM 0x69 // Add with carry with A Register, Immediate
+#define ADC_AB 0x6D // Add with carry with A Register, Absolute
+#define ADC_ZP 0x65 // Add with carry with A Register, Zero Page
+
+#define SBC_IM 0xE9 // Subtract with carry with A Register, Immediate
+#define SBC_AB 0xED // Subtract with carry with A Register, Absolute
+#define SBC_ZP 0xE5 // Subtract with carry with A Register, Zero Page
+
+#define ORA_IM 0x09 // Bitwise OR with A Register, Immediate
+#define ORA_AB 0x0D // Bitwise OR with A Register, Absolute
+#define ORA_ZP 0x05 // Bitwise OR with A Register, Zero Page
+
+#define AND_IM 0x29 // Bitwise AND with A Register, Immediate
+#define AND_AB 0x2D // Bitwise AND with A Register, Absolute
+#define AND_ZP 0x25 // Bitwise AND with A Register, Zero Page
+
+#define EOR_IM 0x49 // Bitwise XOR with A Register, Immediate
+#define EOR_AB 0x4D // Bitwise XOR with A Register, Absolute
+#define EOR_ZP 0x45 // Bitwise XOR with A Register, Zero Page
+
+
+
+#define CMP_IM 0xC9 // Compare with A Register, Immediate
+#define CMP_AB 0xCD // Compare with A Register, Absolute
+#define CMP_ZP 0xC5 // Compare with A Register, Zero Page
+
+#define CPX_IM 0xE0 // Compare with X Register, Immediate
+#define CPX_AB 0xEC // Compare with X Register, Absolute
+#define CPX_ZP 0xE4 // Compare with X Register, Zero Page
+
+#define CPY_IM 0xC0 // Compare with Y Register, Immediate
+#define CPY_AB 0xCC // Compare with Y Register, Absolute
+#define CPY_ZP 0xC4 // Compare with Y Register, Zero Page
+
+#define BIT_AB 0x2c // Bit Compare with A Register, Absolute
+#define BIT_ZP 0x24 // Bit Compare with A Register, Zero Page
+
+#endif

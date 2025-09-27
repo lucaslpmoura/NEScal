@@ -3,6 +3,10 @@
         "memmapping.h": "c",
         "rom.h": "c",
         "stdlib.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "instructions.h": "c",
+        "ram.h": "c",
+        "cpu.h": "c",
+        "types.h": "c"
     }
 }
