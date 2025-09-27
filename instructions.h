@@ -1,6 +1,8 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
+#include "types.h"
+
 
 #define HTL 0x02 // Halt
 #define NOP 0xEA // No Operation
@@ -141,5 +143,7 @@
 
 #define BIT_AB 0x2c // Bit Compare with A Register, Absolute
 #define BIT_ZP 0x24 // Bit Compare with A Register, Zero Page
+
+const char *getOpcodeMnemonic(byte opcode);
 
 #endif

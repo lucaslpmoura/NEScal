@@ -1,15 +1,15 @@
 #include "ROM.h"
 
-ROM InitROM(){
-    ROM rom = (byte*) malloc(sizeof(byte) * ROM_SIZE);
+ROM rom = NULL;
+
+void initROM(){
+    rom = (ROM) malloc(sizeof(ROM) * ROM_SIZE);
     for(uint32_t i = 0; i < ROM_SIZE; i++){
         rom[i] = 0x00 ;
     }
-
-    return rom;
 }
 
-void PrintROM(ROM rom){
+void printROM(ROM rom){
 
     for(uint16_t i = 0; i < ROM_SIZE; i++){
         printf("[%04x]:", i);

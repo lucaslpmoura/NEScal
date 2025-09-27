@@ -8,12 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define STEPPING_MODE 1
+#define START -1
+#define STEPPING_MODE 0
+#define PRINT_STACK 0
+#define PRINT_RAM 1
 
 char *romFileName = "./tst/1_Example.nes";
-
-RAM ram;
-ROM rom;
 
 FILE *romFile;
 long romFileLength;
@@ -32,17 +32,13 @@ int main(int argv, char **argc)
         romFileName = argc[1];
     }
 
-    ram = InitRAM();
-    rom = InitROM();
+    initRAM();
+    initROM();
+    initCPU(&ram, &rom);
 
-    InitCPU(ram, rom);
-    
-
-    // createRomFile();
 
     printf("Executing: %s\n", romFileName);
     reset();
-    printf("PC: %x\n", cpu->PC);
     run();
     return 0;
 }
@@ -54,21 +50,34 @@ void run()
         perror("CPU not initialized.");
         exit(1);
     }
+
+    if(STEPPING_MODE == 1) printf("Press any key to run.\n");
+
+    printTraceLog(START);
     while (!cpu->HLT)
     {
-        if (STEPPING_MODE)
+        if (STEPPING_MODE == 1)
         {
-            printf("Press any key to run.");
             getchar();
         }
-        
+
         emulate();
+        
+        if(PRINT_STACK == 1) {
+            printf("\nSTACK: \n");
+            printStack();
+        }    
     }
-    printf("A: %x, X: %x, Y: %x\n", cpu->A, cpu->X, cpu->Y);
+    if(PRINT_RAM == 1){
+        printf("\n");
+        printRAM();
+    }
+    
 }
 
 void reset()
 {
+ 
     cpu->IND = 1;
     cpu->SP = 0xFD;
 
@@ -80,10 +89,9 @@ void reset()
     }
 
     //byte *Header = (byte *)malloc(0x10 * sizeof(byte));
-
     copyByteArray(HeaderedRom, cpu->rom, HEADERED_ROM_SIZE, 0x10);
     // copyByteArray(HeaderedRom,Header, 0x10, 0);
-
+    
     byte PCL = read(0xFFFC);
     byte PCH = read(0xFFFD);
 
@@ -115,7 +123,9 @@ byte *readFileAsBytes()
 }
 
 void copyByteArray(byte *inArray, byte *outArray, size_t size, size_t offset)
-{
+{   
+    
+    
     for (size_t i = offset; i < (size); i++)
     {
         outArray[i - offset] = inArray[i];

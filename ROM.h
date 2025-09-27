@@ -14,7 +14,9 @@
 
 typedef byte* ROM;
 
-ROM InitROM();
-void PrintROM(ROM rom);
+extern ROM rom;
+
+void initROM();
+void printROM(ROM rom);
 
 #endif

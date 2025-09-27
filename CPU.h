@@ -28,14 +28,13 @@ typedef struct CPU{
     bool OVF; // OVERFLOW Flag
     bool NEG; // Negative Flag
 
-    
     RAM ram;
     ROM rom;
 }CPU; 
 
 extern CPU *cpu;
 
-void InitCPU(RAM ram, ROM rom);
+void initCPU(RAM *ram, ROM *rom);
 void emulate();
 
 
@@ -74,7 +73,7 @@ int convertToSignedVal(byte num);
 addr getAbsoluteAddress();
 addr getZeroPageAddress();
 
-void printTraceLog();
+void printTraceLog(int opcode);
 
 
 #endif

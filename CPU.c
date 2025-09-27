@@ -2,7 +2,7 @@
 
 CPU *cpu = NULL;
 
-void InitCPU(RAM ram, ROM rom)
+void initCPU(RAM *ram, ROM *rom)
 {
     cpu = (CPU *)malloc(sizeof(CPU));
 
@@ -24,8 +24,8 @@ void InitCPU(RAM ram, ROM rom)
     cpu->OVF = 0;
     cpu->NEG = 0;
 
-    cpu->ram = ram;
-    cpu->rom = rom;
+    cpu->ram = *ram;
+    cpu->rom = *rom;
 
 }
 
@@ -33,10 +33,14 @@ void InitCPU(RAM ram, ROM rom)
 void emulate()
 {
     byte opcode = read(cpu->PC);
-    printTraceLog();
+    printTraceLog(opcode);
+
+     
     cpu->PC++;
 
     int cycles = 0;
+
+ 
     switch (opcode)
     {
     // Halt (Unnoficial)
@@ -80,6 +84,7 @@ void emulate()
     // Load Register Instructions
     // Load X
     case LDX_IM:
+        //printf("Loading X with value: %02X", read(cpu->PC));
         load(&cpu->X, read(cpu->PC));
 
         cycles = 2;
@@ -276,7 +281,8 @@ void emulate()
         cpu->PC++;
         byte high = read(cpu->PC);
 
-        push((byte)cpu->PC / 256); // PC High Byte
+        
+        push((byte)(cpu->PC / 256)); // PC High Byte
         push((byte)cpu->PC);       // PC Low Byte
 
         cpu->PC = (addr)(high * 256 + low);
@@ -647,6 +653,7 @@ void emulate()
         // exit(1);
         break;
     }
+
 }
 
 
@@ -656,21 +663,18 @@ byte read(addr address)
     // RAM
     if ((address >= RAM_INIT_ADDR) && (address < RAM_FINAL_ADDR))
     {
-        printf("RAM addr: %x\n", (address % RAM_SIZE));
         return cpu->ram[address];
     }
 
     // RAM Mirrors
     if ((address >= RAM_MIRROR_INIT_ADDR) && (address < RAM_MIRROR_FINAL_ADDR))
     {
-        printf("Effective RAM addr: %x\n", (address % RAM_SIZE));
         return cpu->ram[address % RAM_SIZE];
     }
 
     // ROM
     if ((address >= ROM_INIT_ADDR) && (address < ROM_FINAL_ADDR))
     {
-        printf("Effective ROM addr: %x\n", (address - ROM_SIZE));
         return cpu->rom[address - ROM_SIZE];
     }
 
@@ -754,7 +758,9 @@ int branch(bool flag)
     if (flag)
     {
         int signedVal = convertToSignedVal(temp);
-        cpu->PC += signedVal;
+        printf("Branching from %02X with offset (%02X/%d)", cpu->PC, temp, signedVal);
+        cpu->PC += (addr) signedVal;
+        printf(" to %02X\n", cpu->PC);
         cycles = 3;
     }
     else
@@ -765,7 +771,9 @@ int branch(bool flag)
 }
 void increment(addr addr, byte *value)
 {
-    *value++;
+    
+    *value = *value + 0x01;
+
     if (addr != -1)
     {
         write(addr, *value);
@@ -775,8 +783,8 @@ void increment(addr addr, byte *value)
 }
 
 void decrement(addr addr, byte *value)
-{
-    *value--;
+{   
+    *value = *value - 1;
     if (addr != -1)
     {
         write(addr, *value);
@@ -928,8 +936,7 @@ void eor(byte value)
 
 void cmp(byte value, byte *reg)
 {
-
-    cpu->CRY = value < *reg;
+    cpu->CRY = value <= *reg;
     cpu->NEG = (byte)(*reg - value) > 127;
     cpu->ZER = value == *reg;
 }
@@ -963,3 +970,25 @@ addr getZeroPageAddress()
     return temp;
 }
 
+
+void printTraceLog(int opcode){
+    printf("$%04x \t %02x \t %s \t\t A: %02X X: %02X Y: %02X, SP: %02X, Flags: %s%s%s%s%s%s%s"
+    ,cpu->PC
+    ,opcode
+    ,getOpcodeMnemonic(opcode)
+    ,cpu->A
+    ,cpu->X
+    ,cpu->Y
+    ,cpu->SP
+    ,cpu->HLT == 1 ? "H" : "h"
+    ,cpu->CRY == 1 ? "C" : "c"
+    ,cpu->ZER == 1 ? "Z" : "z"
+    ,cpu->IND == 1 ? "I" : "i"
+    ,cpu->DEC == 1 ? "D" : "d"
+    ,cpu->OVF == 1 ? "O" : "o"
+    ,cpu->NEG == 1 ? "N" : "n"
+);
+    printf("\n");
+
+    //printf("\n");
+}

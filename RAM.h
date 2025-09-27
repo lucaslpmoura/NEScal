@@ -8,10 +8,14 @@
 
 #define RAM_SIZE 0x800
 #define STACK_START_ADDR 0x100
+#define STACK_SIZE 0x100
 
 typedef byte* RAM;
 
-RAM InitRAM();
-void PrintRAM(RAM ram);
+extern RAM ram;
+
+void initRAM();
+void printRAM();
+void printStack();
 
 #endif
