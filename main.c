@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #define START -1
-#define STEPPING_MODE 1
+#define STEPPING_MODE 0
 #define PRINT_STACK 0
 #define PRINT_RAM 1
 

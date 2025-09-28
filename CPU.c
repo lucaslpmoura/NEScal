@@ -97,6 +97,11 @@ void emulate()
         cycles = 3;
         break;
     }
+    case LDX_ZY:
+        load(&cpu->X, read(getZeroPageIndexedAddress(cpu->Y)));
+
+        cycles = 4;
+        break;
     case LDX_AB:
     {
         load(&cpu->X, read(getAbsoluteAddress()));
@@ -104,6 +109,11 @@ void emulate()
         cycles = 4;
         break;
     }
+    case LDX_AY:
+        load(&cpu->X, read(getAbsoluteIndexedAddress(cpu->Y)));
+
+        cycles = 4;
+        break;
 
     // Load Y
     case LDY_IM:
@@ -119,6 +129,13 @@ void emulate()
         cycles = 3;
         break;
     }
+    case LDY_ZX:
+    {
+        load(&cpu->Y, read(getZeroPageIndexedAddress(cpu->X)));
+
+        cycles = 3;
+        break;
+    }
     case LDY_AB:
     {
         load(&cpu->Y, read(getAbsoluteAddress()));
@@ -126,6 +143,14 @@ void emulate()
         cycles = 4;
         break;
     }
+    case LDY_AX:
+    {
+        load(&cpu->Y, read(getAbsoluteIndexedAddress(cpu->X)));
+
+        cycles = 4;
+        break;
+    }
+
 
     // Load A
     case LDA_IM:
@@ -240,7 +265,7 @@ void emulate()
         cycles = 6;
         break;
     case STA_IX:
-        write(getIndirectIndexedAddressYRegister(), cpu->A);
+        write(getIndirectIndexedAddressXRegister(), cpu->A);
 
         cycles = 6;
         break;
@@ -332,9 +357,11 @@ void emulate()
     case JMP_ID: {
         byte low = read(cpu->PC);
         cpu->PC++;
-        byte high = read(cpu->PC);
+        byte high = read(cpu->PC);  
+        
+        addr efAddr = high * 256 + low;
 
-        cpu->PC = (addr)((read(high) * 256) + read(low));
+        cpu->PC = (addr)(read(efAddr + 1) * 256 + read(efAddr));
         cycles = 5;
         break;
     }
@@ -375,6 +402,13 @@ void emulate()
         cycles = 6;
         break;
     }
+    case INC_AX: {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        increment(addr, &value);
+        cycles = 7;
+        break;
+    }
     case INC_ZP:
     {
         addr addr = getZeroPageAddress();
@@ -383,12 +417,30 @@ void emulate()
         cycles = 5;
         break;
     }
+    case INC_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
+        byte value = read(addr);
+        increment(addr, &value);
+        cycles = 6;
+        break;
+    }
+
+    // Decrement
     case DEC_AB:
     {
         addr addr = getAbsoluteAddress();
         byte value = read(addr);
         decrement(addr, &value);
         cycles = 6;
+        break;
+    }
+     case DEC_AX:
+    {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        decrement(addr, &value);
+        cycles = 7;
         break;
     }
     case DEC_ZP:
@@ -399,6 +451,15 @@ void emulate()
         cycles = 5;
         break;
     }
+    case DEC_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
+        byte value = read(addr);
+        decrement(addr, &value);
+        cycles = 6;
+        break;
+    }
+
     case INX:
         increment(-1, &cpu->X);
         cycles = 2;
@@ -490,9 +551,29 @@ void emulate()
         adc(read(getAbsoluteAddress()));
         cycles = 4;
         break;
+    case ADC_AY:
+        adc(read(getAbsoluteIndexedAddress(cpu->Y)));
+        cycles = 4;
+        break;
+    case ADC_AX:
+        adc(read(getAbsoluteIndexedAddress(cpu->X)));
+        cycles = 4;
+        break;
     case ADC_ZP:
         adc(read(getZeroPageAddress()));
         cycles = 3;
+        break;
+    case ADC_ZX:
+        adc(read(getZeroPageIndexedAddress(cpu->X)));
+        cycles = 4;
+        break;
+    case ADC_IY:
+        adc(read(getIndirectIndexedAddressYRegister()));
+        cycles = 5;
+        break;
+    case ADC_IX:
+        adc(read(getIndirectIndexedAddressXRegister()));
+        cycles = 6;
         break;
 
     // Subtract with Carry
@@ -505,10 +586,30 @@ void emulate()
         sbc(read(getAbsoluteAddress()));
         cycles = 4;
         break;
+    case SBC_AX:
+        sbc(read(getAbsoluteIndexedAddress(cpu->X)));
+        cycles = 4;
+        break;
+    case SBC_AY:
+        sbc(read(getAbsoluteIndexedAddress(cpu->Y)));
+        cycles = 4;
+        break;
     case SBC_ZP:
         sbc(read(getZeroPageAddress()));
         cycles = 3;
         break;
+    case SBC_ZX:
+        sbc(read(getZeroPageIndexedAddress(cpu->X)));
+        cycles = 4;
+        break;
+    case SBC_IX:
+        sbc(read(getIndirectIndexedAddressXRegister()));
+        cycles = 6;
+        break;
+    case SBC_IY:
+        sbc(read(getIndirectIndexedAddressYRegister()));
+        cycles = 6;
+        break;    
 
     // Arithimetic Shift Left
     case ASL_RA:
@@ -524,9 +625,27 @@ void emulate()
         cycles = 6;
         break;
     }
+    case ASL_AX:
+    {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        asl(addr, &value);
+
+        cycles = 7;
+        break;
+    }
     case ASL_ZP:
     {
         addr addr = getZeroPageAddress();
+        byte value = read(addr);
+        asl(addr, &value);
+
+        cycles = 5;
+        break;
+    }
+    case ASL_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
         byte value = read(addr);
         asl(addr, &value);
 
@@ -548,9 +667,27 @@ void emulate()
         cycles = 6;
         break;
     }
+    case LSR_AX:
+    {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        lsr(addr, &value);
+
+        cycles = 7;
+        break;
+    }
     case LSR_ZP:
     {
         addr addr = getZeroPageAddress();
+        byte value = read(addr);
+        lsr(addr, &value);
+
+        cycles = 5;
+        break;
+    }
+    case LSR_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
         byte value = read(addr);
         lsr(addr, &value);
 
@@ -574,6 +711,15 @@ void emulate()
         cycles = 6;
         break;
     }
+    case ROL_AX:
+    {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        rol(addr, &value);
+
+        cycles = 7;
+        break;
+    }
     case ROL_ZP:
     {
         addr addr = getZeroPageAddress();
@@ -581,6 +727,15 @@ void emulate()
         rol(addr, &value);
 
         cycles = 5;
+        break;
+    }
+    case ROL_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
+        byte value = read(addr);
+        rol(addr, &value);
+
+        cycles = 6;
         break;
     }
 
@@ -600,6 +755,15 @@ void emulate()
         cycles = 6;
         break;
     }
+    case ROR_AX:
+    {
+        addr addr = getAbsoluteIndexedAddress(cpu->X);
+        byte value = read(addr);
+        ror(addr, &value);
+
+        cycles = 7;
+        break;
+    }
     case ROR_ZP:
     {
         addr addr = getZeroPageAddress();
@@ -607,6 +771,15 @@ void emulate()
         ror(addr, &value);
 
         cycles = 5;
+        break;
+    }
+    case ROR_ZX:
+    {
+        addr addr = getZeroPageIndexedAddress(cpu->X);
+        byte value = read(addr);
+        ror(addr, &value);
+
+        cycles = 6;
         break;
     }
 
@@ -621,9 +794,29 @@ void emulate()
         ora(read(getAbsoluteAddress()));
         cycles = 4; // TODO: Special Case
         break;
+    case ORA_AX:
+        ora(read(getAbsoluteIndexedAddress(cpu->X)));
+        cycles = 4; // TODO: Special Case
+        break;
+    case ORA_AY:
+        ora(read(getAbsoluteIndexedAddress(cpu->Y)));
+        cycles = 4; // TODO: Special Case
+        break;
     case ORA_ZP:
         ora(read(getZeroPageAddress()));
         cycles = 3;
+        break;
+    case ORA_ZX:
+        ora(read(getZeroPageIndexedAddress(cpu->X)));
+        cycles = 4; // TODO: Special Case
+        break;
+    case ORA_IX:
+        ora(read(getIndirectIndexedAddressXRegister()));
+        cycles = 6;
+        break;
+    case ORA_IY:
+        ora(read(getIndirectIndexedAddressYRegister()));
+        cycles = 5;
         break;
 
     // AND with register A
@@ -636,9 +829,29 @@ void emulate()
         and(read(getAbsoluteAddress()));
         cycles = 4; // TODO: Special Case
         break;
+    case AND_AY:
+        and(read(getAbsoluteIndexedAddress(cpu->Y)));
+        cycles = 4; 
+        break;
+    case AND_AX:
+        and(read(getAbsoluteIndexedAddress(cpu->X)));
+        cycles = 4; 
+        break;
     case AND_ZP:
         and(read(getZeroPageAddress()));
         cycles = 3;
+        break;
+    case AND_ZX:
+        and(read(getZeroPageIndexedAddress(cpu->X)));
+        cycles = 3;
+        break;
+    case AND_IX:
+        and(read(getIndirectIndexedAddressXRegister()));
+        cycles = 6;
+        break;
+    case AND_IY:
+        and(read(getIndirectIndexedAddressYRegister()));
+        cycles = 5;
         break;
 
     // XOR with register A
@@ -649,11 +862,31 @@ void emulate()
         break;
     case EOR_AB:
         eor(read(getAbsoluteAddress()));
+        cycles = 4; 
+        break;
+    case EOR_AX:
+        eor(read(getAbsoluteIndexedAddress(cpu->X)));
+        cycles = 4; // TODO: Special Case
+        break;
+    case EOR_AY:
+        eor(read(getAbsoluteIndexedAddress(cpu->Y)));
         cycles = 4; // TODO: Special Case
         break;
     case EOR_ZP:
         eor(read(getZeroPageAddress()));
         cycles = 3;
+        break;
+    case EOR_ZX:
+        eor(read(getZeroPageIndexedAddress(cpu->X)));
+        cycles = 4;
+        break;
+    case EOR_IX:
+        eor(read(getIndirectIndexedAddressXRegister()));
+        cycles = 6;
+        break;
+    case EOR_IY:
+        eor(read(getIndirectIndexedAddressYRegister()));
+        cycles = 6;
         break;
 
     // Compare Instructions
@@ -667,10 +900,31 @@ void emulate()
         cmp(read(getAbsoluteAddress()), &cpu->A);
         cycles = 4;
         break;
+    case CMP_AX:
+        cmp(read(getAbsoluteIndexedAddress(cpu->X)), &cpu->A);
+        cycles = 4;
+        break;
+    case CMP_AY:
+        cmp(read(getAbsoluteIndexedAddress(cpu->Y)), &cpu->A);
+        cycles = 4;
+        break;
     case CMP_ZP:
         cmp(read(getZeroPageAddress()), &cpu->A);
         cycles = 3;
         break;
+    case CMP_ZX:
+        cmp(read(getZeroPageIndexedAddress(cpu->X)), &cpu->A);
+        cycles = 4;
+        break;
+    case CMP_IX:
+        cmp(read(getIndirectIndexedAddressXRegister()), &cpu->A);
+        cycles = 5;
+        break;
+    case CMP_IY:
+        cmp(read(getIndirectIndexedAddressYRegister()), &cpu->A);
+        cycles = 5;
+        break;
+    
 
     // Compare Register X
     case CPX_IM:
@@ -746,7 +1000,8 @@ byte read(addr address)
 }
 
 void write(addr address, byte value)
-{
+{   
+    printf("Writing %02X to address: %04X\n", value, address);
     // RAM
     if ((address >= RAM_INIT_ADDR) && (address < RAM_FINAL_ADDR))
     {
@@ -1045,7 +1300,7 @@ As this function can only index the zero page (0000 - 00FF)
 we need to "wrap arround" the offset
 */
 addr getZeroPageIndexedAddress(byte reg){
-    return (getZeroPageAddress() + reg) % (ROM_INIT_ADDR + 0xFF); 
+    return (getZeroPageAddress() + reg) % (RAM_INIT_ADDR + 0xFF); 
 }
 
 addr getIndirectIndexedAddressYRegister(){
@@ -1066,16 +1321,17 @@ addr getIndirectIndexedAddressXRegister(){
     indAddr = read(temp);
     temp++;
     indAddr = (addr)(read(temp) << 8 | indAddr);
-    indAddr += cpu->Y;
     return indAddr;
 }
 
 
 void printTraceLog(int opcode){
-    printf("$%04x \t %02x \t %s \t\t A: %02X X: %02X Y: %02X, SP: %02X, Flags: %s%s%s%s%s%s%s"
+    printf("$%04x \t %02x \t %6s \t %02X  %02X \t A: %02X X: %02X Y: %02X, SP: %02X, Flags: %s%s%s%s%s%s%s"
     ,cpu->PC
     ,opcode
     ,getOpcodeMnemonic(opcode)
+    ,read(cpu->PC + 1)
+    ,read(cpu->PC + 2)
     ,cpu->A
     ,cpu->X
     ,cpu->Y
