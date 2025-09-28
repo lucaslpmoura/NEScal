@@ -71,7 +71,11 @@ void bit(byte value);
 int convertToSignedVal(byte num);
 
 addr getAbsoluteAddress();
+addr getAbsoluteIndexedAddress(byte reg);
 addr getZeroPageAddress();
+addr getZeroPageIndexedAddress(byte reg);
+addr getIndirectIndexedAddressYRegister();
+addr getIndirectIndexedAddressXRegister();
 
 void printTraceLog(int opcode);
 

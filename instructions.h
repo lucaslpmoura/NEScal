@@ -23,16 +23,28 @@
 
 #define LDA_IM 0xA9 // Load A, Immediate
 #define LDA_ZP 0xA5 // Load A, Zero Page
+#define LDA_ZX 0xB5 // Loda A, Zero Page with X offset
 #define LDA_AB 0xAD // Load A, Absolute
+#define LDA_AY 0xB9 // Load A, Absolute with Y offset
+#define LDA_AX 0xBD // Load A, Absolute with X offset
+#define LDA_IY 0xA1 // Load A, Indirect with Y offset
+#define LDA_IX 0xB1 // Load A, Indirect with X offset
 
 #define STX_ZP 0x86 // Store X, Zero Page
+#define STX_ZY 0x96 // Store X, Zero Page with Y offset
 #define STX_AB 0x8E // Store X, Absolute
 
 #define STY_ZP 0x84 // Store Y, Zero Page
+#define STY_ZX 0x94 // Store Y, Zero Page with X offset
 #define STY_AB 0x8C // Store Y, Absolute
 
 #define STA_ZP 0x85 // Store A, Zero Page
+#define STA_ZX 0x95 // Store A, Zero Page with X Offset
 #define STA_AB 0x8D // Store A, Absolute
+#define STA_AY 0x99 // Store A, Absolute with Y offset
+#define STA_AX 0x9D // Store A, Absolute with X Offset
+#define STA_IY 0x91 // Store A, Indirect with Y Offset
+#define STA_IX 0x81 // Store A, Indirect with X Offset
 
 
 
@@ -55,7 +67,8 @@
 
 
 
-#define JMP 0x4C // Jump
+#define JMP_AB 0x4C // Jump, Absolute
+#define JMP_ID 0x6C // Jump, Indirect
 #define JSR 0x20 // Jump to Subroutine
 #define RTS 0x60 // Return From Subroutine
 

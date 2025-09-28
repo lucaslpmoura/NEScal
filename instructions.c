@@ -23,16 +23,28 @@ const char* getOpcodeMnemonic(byte opcode) {
 
         case 0xA9: return "LDA_IM";
         case 0xA5: return "LDA_ZP";
+        case LDA_ZX: return "LDA_ZX";
         case 0xAD: return "LDA_AB";
+        case 0xB9: return "LDA_AY";
+        case 0xBD: return "LDA_AX";
+        case LDA_IY: return "LDA_IY";
+        case LDA_IX: return "LDA_IX";
 
         case 0x86: return "STX_ZP";
+        case STX_ZY: return "STX_ZY";
         case 0x8E: return "STX_AB";
 
         case 0x84: return "STY_ZP";
+        case STY_ZX: return "STY_ZX";
         case 0x8C: return "STY_AB";
 
-        case 0x85: return "STA_ZP";
-        case 0x8D: return "STA_AB";
+        case STA_ZP: return "STA_ZP";
+        case STA_ZX: return "STA_ZX";
+        case STA_AB: return "STA_AB";
+        case STA_AY: return "STA_AY";
+        case STA_AX: return "STA_AX";
+        case STA_IY: return "STA_IY";
+        case STA_IX: return "STA_IX";
 
         case 0x10: return "BPL";
         case 0x30: return "BMI";
