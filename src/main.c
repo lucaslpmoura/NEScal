@@ -1,5 +1,7 @@
-#include "CPU.h"
+#include "emulator/CPU.h"
 #include "instructions.h"
+
+#include "PPU.h"
 
 #include "RAM.h"
 #include "ROM.h"
@@ -12,6 +14,7 @@
 #define STEPPING_MODE 0
 #define PRINT_STACK 0
 #define PRINT_RAM 1
+#define PRINT_CHRROM 0
 
 char *romFileName = "./tst/1_Example.nes";
 
@@ -22,8 +25,8 @@ uint8_t *buffer;
 void run();
 void reset();
 
-byte *readFileAsBytes();
-void copyByteArray(byte *inArray, byte *outArray, size_t size, size_t offset);
+byte *readFileAsBytes(size_t size, size_t offset);
+void copyByteArray(byte *inArray, byte *outArray, uint32_t size, uint32_t offset);
 
 int main(int argv, char **argc)
 {
@@ -36,6 +39,7 @@ int main(int argv, char **argc)
     initROM();
     initCPU(&ram, &rom);
 
+    initPPU(&rom);
 
     printf("Executing: %s\n", romFileName);
     reset();
@@ -69,10 +73,20 @@ void run()
         }    
     }
     if(PRINT_RAM == 1){
+        printf("\n --- RAM ---- \n");
         printf("\n");
         printRAM();
     }
-    
+    if(PRINT_CHRROM == 1){
+        printf("\n --- CHARACTER ROM ---- \n");
+        printCHRROM();
+    }
+    free(ram);
+    free(rom);
+
+    free(cpu);
+    free(ppu->CHRROM);
+    free(ppu);
 }
 
 void reset()
@@ -81,7 +95,7 @@ void reset()
     cpu->IND = 1;
     cpu->SP = 0xFD;
 
-    byte *HeaderedRom = readFileAsBytes();
+    byte *HeaderedRom = readFileAsBytes(0xA000, 0);
 
     if (HeaderedRom == NULL)
     {
@@ -89,16 +103,20 @@ void reset()
     }
 
     //byte *Header = (byte *)malloc(0x10 * sizeof(byte));
-    copyByteArray(HeaderedRom, cpu->rom, HEADERED_ROM_SIZE, 0x10);
-    // copyByteArray(HeaderedRom,Header, 0x10, 0);
-    
+
+    // Copies the File to the working ROM
+    copyByteArray(HeaderedRom, rom, ROM_SIZE, 0x10);
+
+    // Copies the Character ROM to the PPU CHRROM Struct
+    copyByteArray(HeaderedRom, ppu->CHRROM, CHRROM_SIZE, 0x8010);
+
     byte PCL = read(0xFFFC);
     byte PCH = read(0xFFFD);
 
     cpu->PC = (addr)((PCH * 0x100) + PCL);
 }
 
-byte *readFileAsBytes()
+byte *readFileAsBytes(size_t size, size_t offset)
 {
     FILE *romFile = fopen(romFileName, "rb");
     if (!romFile)
@@ -107,7 +125,7 @@ byte *readFileAsBytes()
         return NULL;
     }
 
-    byte *buffer = calloc(HEADERED_ROM_SIZE, sizeof(byte));
+    byte *buffer = calloc(size, sizeof(byte));
 
     if (!buffer)
     {
@@ -115,18 +133,20 @@ byte *readFileAsBytes()
         fclose(romFile);
         return NULL;
     }
+    if(offset > 0){
+        fseek(romFile, offset, SEEK_SET);
+    }
 
-    romFileLength = fread(buffer, 1, HEADERED_ROM_SIZE, romFile);
+    romFileLength = fread(buffer, 1, size, romFile);
 
     fclose(romFile);
     return buffer;
 }
 
-void copyByteArray(byte *inArray, byte *outArray, size_t size, size_t offset)
+void copyByteArray(byte *inArray, byte *outArray, uint32_t size, uint32_t offset)
 {   
     
-    
-    for (size_t i = offset; i < (size); i++)
+    for (size_t i = offset; i < (size + offset); i++)
     {
         outArray[i - offset] = inArray[i];
     }

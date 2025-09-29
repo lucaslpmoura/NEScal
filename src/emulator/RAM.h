@@ -3,7 +3,8 @@
 
 
 #include "types.h"
-#include "stdio.h"
+#include "util.h"
+
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -17,7 +18,6 @@ extern RAM ram;
 
 void initRAM();
 void printRAM();
-bool isLineNotZero(uint16_t line);
 void printStack();
 
 #endif
