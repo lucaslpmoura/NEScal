@@ -1,5 +1,5 @@
 *.exe
 *.pdf
-.vscode
+.vscode/
 output/
 build/
