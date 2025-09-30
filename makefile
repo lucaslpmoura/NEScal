@@ -13,7 +13,8 @@ SRCS = $(SRC_DIR)/main.c \
        $(EMU_DIR)/RAM.c \
        $(EMU_DIR)/ROM.c \
        $(EMU_DIR)/util.c \
-       $(GPH_DIR)/window.c
+       $(GPH_DIR)/window.c \
+       $(GPH_DIR)/canvas.c
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 

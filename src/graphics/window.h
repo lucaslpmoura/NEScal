@@ -4,6 +4,8 @@
 #include "PPU.h"
 #include "types.h";
 
+#include "canvas.h"
+
 #include <gtk/gtk.h>
 
 
