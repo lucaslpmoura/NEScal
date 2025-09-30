@@ -51,11 +51,9 @@ int main(int argc , char **argv)
     printf("Executing: %s\n", romFileName);
     reset();
 
-    initGraphics(&run, &loadFile);
+    initGraphics(ppu, &run, &loadFile);
     startGraphics(argc, argv);
 
-    
-    
     freeStructs();
     return 0;
 }

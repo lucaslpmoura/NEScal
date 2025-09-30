@@ -1,6 +1,6 @@
 *.exe
 *.pdf
-.vscode/
-output/
-build/
+.vscode/*
+output/*
+build/*
 NESCAL

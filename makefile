@@ -5,7 +5,7 @@ SRC_DIR = src
 EMU_DIR = src/emulator
 GPH_DIR = src/graphics
 BUILD_DIR = build
-
+       
 SRCS = $(SRC_DIR)/main.c \
        $(EMU_DIR)/CPU.c \
        $(EMU_DIR)/instructions.c \

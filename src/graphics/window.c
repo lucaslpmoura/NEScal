@@ -7,6 +7,10 @@ GListModel *fileFilters = NULL;
 
 GtkFileDialog *fileSelectDialog = NULL;
 
+GtkWidget *canvas = NULL;
+GdkRGBA color = {.red = 1.0, .green = 1.0, .blue = 1.0, .alpha = 1.0};
+
+byte *CHRROM;
 
 void (*on_run)() = NULL;
 void ((*on_load))(char *path) = NULL;
@@ -19,6 +23,8 @@ static void run_action(GSimpleAction *action,
         g_printerr("You forgot to define on_run.\n");
         return;
     }
+
+    gtk_widget_queue_draw(canvas);
     on_run();
 }
 
@@ -53,6 +59,47 @@ static void load_action(GSimpleAction *action,
     
 }
 
+static void setColorValue(float r, float g, float b, float a){
+  color.red = r;
+  color.green = g;
+  color.blue = b;
+  color.alpha = a;
+}
+
+static void draw(GtkDrawingArea *area,
+               cairo_t        *cr,
+               int             width,
+               int             height,
+               gpointer        data)
+{
+  int pixelSize = 1;
+  for(int table = 0; table < 2; table++){
+    for(int row = 0; row < 16; row++){
+      for(int column = 0; column < 16; column++){
+        for(int y = 0; y < 8; y++){
+          for(int x = 0 ; x < 8; x++){
+            byte lowByte = CHRROM[y + column*16 + row * 256 + table * 4096];
+            byte highByte = CHRROM[8 + y + column*16 + row * 256 + table * 4096];
+            for(int x = 0; x < 8; x++){
+              int TwoBit = ((lowByte >> (7-x)) & 1) == 1 ? 1 : 0;
+              TwoBit += ((highByte >> (7-x)) & 1) == 1 ? 2 : 0;
+
+              double gray = TwoBit / 3.0;
+              cairo_set_source_rgb(cr, gray, gray, gray);
+              int px = x + column * 8 + table*128;
+              int py = y + row * 8;
+              
+              cairo_rectangle(cr, px*pixelSize, py*pixelSize, pixelSize, pixelSize);
+              cairo_fill(cr); 
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+}
 
 
 // Called when the window is created
@@ -64,9 +111,15 @@ void on_activate(GtkApplication *app)
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_window_set_child(GTK_WINDOW(window), box);
 
-  GtkWidget *emulatorLabel = gtk_label_new("Emulator");
-  gtk_box_append(GTK_BOX(box), emulatorLabel);
+  //GtkWidget *emulatorLabel = gtk_label_new("Emulator");
+  //gtk_box_append(GTK_BOX(box), emulatorLabel);
 
+  canvas = gtk_drawing_area_new();
+  gtk_drawing_area_set_content_width(canvas, 200);
+  gtk_drawing_area_set_content_height(canvas, 200);
+  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(canvas), draw, NULL, NULL);
+  
+  gtk_box_append(box,canvas);
   // Creating the actions for the Menu
   static const GActionEntry app_entries[] = {
       {"run", run_action, NULL, NULL, NULL},
@@ -99,10 +152,11 @@ void on_activate(GtkApplication *app)
 
 
 void initGraphics(
+                  PPU *ppu,
                   void (*on_run_func)(), 
                   void (*on_load_func)())
 {
-
+  CHRROM = ppu->CHRROM;
   initFileFilters();
 
   on_run = on_run_func;

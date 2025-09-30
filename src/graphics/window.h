@@ -1,6 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "PPU.h"
+#include "types.h";
+
 #include <gtk/gtk.h>
 
 
@@ -14,8 +17,9 @@ extern GtkFileFilter *dotNesFilter;
 extern GListModel *fileFilters;
 
 void on_activate (GtkApplication *app);
-void initGraphics(void (*on_run_func)(), 
-                  void (*on_load_func)());
+void initGraphics(  PPU *ppu,
+                    void (*on_run_func)(), 
+                    void (*on_load_func)());
 
 void initFileFilters();
 
