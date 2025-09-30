@@ -7,6 +7,7 @@
 
 #include "RAM.h"
 #include "ROM.h"
+#include "PPU.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,18 +29,19 @@ typedef struct CPU{
     bool OVF; // OVERFLOW Flag
     bool NEG; // Negative Flag
 
+    PPU *ppu;
     RAM ram;
     ROM rom;
 }CPU; 
 
 extern CPU *cpu;
 
-void initCPU(RAM *ram, ROM *rom);
-void emulate();
+void initCPU(RAM *ram, ROM *rom, PPU *ppu);
+void emulateCPU();
+void resetCPU();
 
-
-byte readMemory(addr address);
-void writeMemory(addr address, byte value);
+byte readCPU(addr address);
+void writeCPU(addr address, byte value);
 
 
 void load(byte *reg, byte value);

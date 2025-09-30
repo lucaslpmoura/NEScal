@@ -32,7 +32,7 @@ void freeStructs();
 void run();
 void reset();
 
-void loadFile();
+void loadFile(char *path);
 
 byte *readFileAsBytes(size_t size, size_t offset);
 void copyByteArray(byte *inArray, byte *outArray, uint32_t size, uint32_t offset);
@@ -80,7 +80,7 @@ void run()
             getchar();
         }
 
-        emulate();
+        emulateCPU();
         
         if(PRINT_STACK == 1) {
             printf("\nSTACK: \n");
@@ -104,9 +104,10 @@ void run()
 void init(){
     initRAM();
     initROM();
-    initCPU(&ram, &rom);
-
     initPPU(&rom);
+    initCPU(&ram, &rom, ppu);
+
+    
 }
 
 void freeStructs(){
@@ -114,20 +115,16 @@ void freeStructs(){
     free(rom);
 
     free(cpu);
-    free(ppu->CHRROM);
+    free(ppu->chrRom);
+    free(ppu->vRam);
     free(ppu);
 
 }
 
 void reset()
 {
-    cpu->IND = 1;
-    cpu->SP = 0xFD;
+    resetCPU();
 
-    byte PCL = readMemory(0xFFFC);
-    byte PCH = readMemory(0xFFFD);
-
-    cpu->PC = (addr)((PCH * 0x100) + PCL);
 }
 
 void loadFile(char *path){
@@ -146,7 +143,7 @@ void loadFile(char *path){
     copyByteArray(HeaderedRom, rom, ROM_SIZE, 0x10);
 
     // Copies the Character ROM to the PPU CHRROM Struct
-    copyByteArray(HeaderedRom, ppu->CHRROM, CHRROM_SIZE, 0x8010);
+    copyByteArray(HeaderedRom, ppu->chrRom, CHRROM_SIZE, 0x8010);
 
     reset();
     printf("Loaded file: %s\n", romFileName);

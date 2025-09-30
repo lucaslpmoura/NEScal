@@ -1,5 +1,5 @@
-#include "types.h";
-#include "PPU.h";
+#include "types.h"
+#include "PPU.h"
 #include <gtk/gtk.h>
 
 extern PPU *ppu;
