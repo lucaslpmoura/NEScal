@@ -38,8 +38,8 @@ void initCPU(RAM *ram, ROM *rom);
 void emulate();
 
 
-byte read(addr address);
-void write(addr address, byte value);
+byte readMemory(addr address);
+void writeMemory(addr address, byte value);
 
 
 void load(byte *reg, byte value);

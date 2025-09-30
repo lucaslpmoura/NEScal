@@ -1,11 +1,13 @@
 #include "emulator/CPU.h"
-#include "instructions.h"
+#include "emulator/instructions.h"
 
-#include "PPU.h"
+#include "emulator/PPU.h"
 
-#include "RAM.h"
-#include "ROM.h"
-#include "MemMapping.h"
+#include "emulator/RAM.h"
+#include "emulator/ROM.h"
+#include "emulator/MemMapping.h"
+
+#include "graphics/window.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,39 +19,54 @@
 #define PRINT_CHRROM 0
 
 char *romFileName = "./tst/1_Example.nes";
+bool hasLoadedFile = false;
+
 
 FILE *romFile;
 long romFileLength;
 uint8_t *buffer;
 
+void init();
+void freeStructs();
+
 void run();
 void reset();
+
+void loadFile();
 
 byte *readFileAsBytes(size_t size, size_t offset);
 void copyByteArray(byte *inArray, byte *outArray, uint32_t size, uint32_t offset);
 
-int main(int argv, char **argc)
+
+
+int main(int argc , char **argv)
 {
-    if (argv == 2)
+    if (argc == 2)
     {
-        romFileName = argc[1];
+        romFileName = argv[1];
     }
 
-    initRAM();
-    initROM();
-    initCPU(&ram, &rom);
-
-    initPPU(&rom);
-
+    init();   
+ 
     printf("Executing: %s\n", romFileName);
     reset();
-    run();
+
+    initGraphics(&run, &loadFile);
+    startGraphics(argc, argv);
+
+    
+    
+    freeStructs();
     return 0;
 }
 
 
 void run()
-{
+{   
+    if(!hasLoadedFile){
+        perror("No file loaded.");
+        return;
+    } 
     if(cpu == NULL){
         perror("CPU not initialized.");
         exit(1);
@@ -81,20 +98,43 @@ void run()
         printf("\n --- CHARACTER ROM ---- \n");
         printCHRROM();
     }
+   
+
+    reset();
+}
+
+void init(){
+    initRAM();
+    initROM();
+    initCPU(&ram, &rom);
+
+    initPPU(&rom);
+}
+
+void freeStructs(){
     free(ram);
     free(rom);
 
     free(cpu);
     free(ppu->CHRROM);
     free(ppu);
+
 }
 
 void reset()
 {
- 
     cpu->IND = 1;
     cpu->SP = 0xFD;
 
+    byte PCL = readMemory(0xFFFC);
+    byte PCH = readMemory(0xFFFD);
+
+    cpu->PC = (addr)((PCH * 0x100) + PCL);
+}
+
+void loadFile(char *path){
+    romFileName = path;
+    
     byte *HeaderedRom = readFileAsBytes(0xA000, 0);
 
     if (HeaderedRom == NULL)
@@ -110,10 +150,9 @@ void reset()
     // Copies the Character ROM to the PPU CHRROM Struct
     copyByteArray(HeaderedRom, ppu->CHRROM, CHRROM_SIZE, 0x8010);
 
-    byte PCL = read(0xFFFC);
-    byte PCH = read(0xFFFD);
-
-    cpu->PC = (addr)((PCH * 0x100) + PCL);
+    reset();
+    printf("Loaded file: %s\n", romFileName);
+    hasLoadedFile = true;
 }
 
 byte *readFileAsBytes(size_t size, size_t offset)

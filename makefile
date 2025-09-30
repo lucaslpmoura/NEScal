@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -I./src -I./src/emulator $(shell pkg-config --cflags gtk4)
+CFLAGS = -Wall -Wextra -O2  -I./src -I./src/emulator $(shell pkg-config --cflags gtk4)
 
 SRC_DIR = src
 EMU_DIR = src/emulator
@@ -17,13 +17,13 @@ SRCS = $(SRC_DIR)/main.c \
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-TARGET = NEScal.exe
+TARGET = NEScal
 
 all: $(TARGET)
 
 # Linkagem final
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(shell pkg-config --libs gtk4)
+	$(CC) $(CFLAGS) -o $@ $^ $(shell pkg-config --libs gtk4) -no-pie
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
