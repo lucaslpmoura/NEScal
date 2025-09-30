@@ -1,11 +1,10 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -I./src -I./src/emulator
-
+CFLAGS = -Wall -Wextra -O2 -I./src -I./src/emulator $(shell pkg-config --cflags gtk4)
 
 SRC_DIR = src
 EMU_DIR = src/emulator
+GPH_DIR = src/graphics
 BUILD_DIR = build
-
 
 SRCS = $(SRC_DIR)/main.c \
        $(EMU_DIR)/CPU.c \
@@ -13,26 +12,22 @@ SRCS = $(SRC_DIR)/main.c \
        $(EMU_DIR)/PPU.c \
        $(EMU_DIR)/RAM.c \
        $(EMU_DIR)/ROM.c \
-       $(EMU_DIR)/util.c
-
+       $(EMU_DIR)/util.c \
+       $(GPH_DIR)/window.c
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-
 TARGET = NEScal.exe
-
 
 all: $(TARGET)
 
 # Linkagem final
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
-
+	$(CC) $(CFLAGS) -o $@ $^ $(shell pkg-config --libs gtk4)
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
