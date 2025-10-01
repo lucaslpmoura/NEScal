@@ -105,9 +105,7 @@ void init(){
     initRAM();
     initROM();
     initPPU(&rom);
-    initCPU(&ram, &rom, ppu);
-
-    
+    initCPU(&ram, &rom, ppu);   
 }
 
 void freeStructs(){
@@ -115,7 +113,7 @@ void freeStructs(){
     free(rom);
 
     free(cpu);
-    free(ppu->chrRom);
+    free(ppu->chrData);
     free(ppu->vRam);
     free(ppu);
 
@@ -130,20 +128,21 @@ void reset()
 void loadFile(char *path){
     romFileName = path;
     
-    byte *HeaderedRom = readFileAsBytes(0xA000, 0);
+    byte *headeredRom = readFileAsBytes(0xA000, 0);
 
-    if (HeaderedRom == NULL)
+    if (headeredRom == NULL)
     {
         exit(1);
     }
 
-    //byte *Header = (byte *)malloc(0x10 * sizeof(byte));
-
     // Copies the File to the working ROM
-    copyByteArray(HeaderedRom, rom, ROM_SIZE, 0x10);
+    copyByteArray(headeredRom, rom, ROM_SIZE, HEADER_SIZE);
+
+    // Copies the File header to the PPU
+    copyByteArray(headeredRom, ppu->header, HEADER_SIZE, 0);
 
     // Copies the Character ROM to the PPU CHRROM Struct
-    copyByteArray(HeaderedRom, ppu->chrRom, CHRROM_SIZE, 0x8010);
+    copyByteArray(headeredRom, ppu->chrData, CHRDATA_SIZE, CHRDATA_START_ADDR);
 
     reset();
     printf("Loaded file: %s\n", romFileName);

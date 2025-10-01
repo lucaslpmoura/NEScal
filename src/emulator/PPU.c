@@ -9,12 +9,63 @@ void initPPU(ROM *rom){
     ppu->tempAddr = 0x0000;
 
     ppu->transferAddr = 0x0000;
+
+    ppu->vRam = (byte*) malloc(sizeof(byte) * VRAM_SIZE);
     ppu->vRamAddr = 0x0000;
+    ppu->vRamInc32Mode = false;
 
     ppu->rom = *rom;
-    ppu->chrRom = (byte*) malloc(sizeof(byte) * CHRROM_SIZE);
-    ppu->vRam = (byte*) malloc(sizeof(byte) * VRAM_SIZE);
+    ppu->header = (byte*) malloc(sizeof(byte) * HEADER_SIZE);
+
+    ppu->chrData = (byte*) malloc(sizeof(byte) * CHRDATA_SIZE);
+    
     ppu->palleteRam = (byte*) malloc(sizeof(byte) * PALLETE_RAM_SIZE);
+
+    ppu->readBuffer = 0x00;
+}
+
+byte readPPU(addr address){
+    switch (address)
+    {
+    case PPUSTATUS:
+        return 0x80;
+    case PPUDATA:
+        byte temp = ppu->readBuffer;
+
+        // Reading from the pattern table
+        if(ppu->vRamAddr < PATTERNTABLE_FINAL_ADDR){
+            ppu->readBuffer = ppu->chrData[ppu->vRamAddr];
+        }
+
+        // Reading from the nametable
+        else if(ppu->vRamAddr < NAMETABLE_FINAL_ADDR){
+            if((ppu->header[HORIZONTAL_MIRRORING_BIT] & 1) == 0){
+
+                // Horizontal Mirroring
+                ppu->readBuffer = ppu->vRam[(ppu->vRamAddr & 0x3FF) | (ppu->vRamAddr & 0x800) >> 1];
+
+            }else{
+
+                // Vertical Mirroring
+                ppu->readBuffer = ppu->vRam[ppu->vRamAddr & 0x7FF];
+
+            }
+
+        // Reading from Pallete Ram
+        }else{
+            if((ppu->vRamAddr & 0x03) == 0){
+                temp = ppu->palleteRam[ppu->vRamAddr & 0x0F];
+            }else{
+                temp = ppu->palleteRam[ppu->vRamAddr & 0x1F];
+            }
+        }
+
+        ppu->vRamAddr += (addr)(ppu->vRamInc32Mode ? 32 : 1);
+        ppu->vRamAddr &= 0x3FFF;
+        break;
+    default:
+        return 0x00;
+    }
 }
 
 void writePPU(addr address, byte value){
@@ -47,13 +98,42 @@ void writePPU(addr address, byte value){
         ppu->WL = !ppu->WL;
         break;
     case PPUDATA:
+
+        // Pattern Tables
         if(ppu->vRamAddr < PATTERNTABLE_FINAL_ADDR){
-            // write to pattern tables
+            // If there is no pattern table, write thre. Other wise it is read-only.
+            if(ppu->header[CHR_DATA_SIZE_BIT] == 0){
+                ppu->chrData[ppu->vRamAddr] = value;
+            }
+
+        // Name Tables
         }else if(ppu->vRamAddr < NAMETABLE_FINAL_ADDR){
-            // write to name atables
+            if((ppu->header[HORIZONTAL_MIRRORING_BIT] & 1) == 0){
+
+                // Horizontal Mirroring
+                ppu->vRam[(ppu->vRamAddr & 0x3FF) | (ppu->vRamAddr & 0x800) >> 1] = value;
+
+            }else{
+
+                // Vertical Mirroring
+                ppu->vRam[ppu->vRamAddr & 0x7FF] = value;
+
+            }
+
+        // Pallete Ram
         }else{
-            // write to Pallete Ram
+
+            // Write to Pallete Ram (mirrors)
+            if((ppu->vRamAddr & 3) == 0){
+                ppu->palleteRam[ppu->vRamAddr & 0x0F] = value;
+            }else{
+                ppu->palleteRam[ppu->vRamAddr & 0x1F] = value;
+            }
+
         }
+
+        ppu->vRamAddr += (addr)(ppu->vRamInc32Mode ? 0x20 : 0x01);
+        ppu->vRamAddr &= 0x3FFF;
         break;
     
     default:
@@ -62,5 +142,5 @@ void writePPU(addr address, byte value){
 }
 
 void printCHRROM(){
-    printMemory(ppu->chrRom, CHRROM_SIZE);
+    printMemory(ppu->chrData, CHRDATA_SIZE);
 }

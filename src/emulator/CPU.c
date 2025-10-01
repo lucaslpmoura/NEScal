@@ -1001,6 +1001,11 @@ byte readCPU(addr address)
         return cpu->ram[address % RAM_SIZE];
     }
 
+    if((address >= PPU_REGISTERS_START_ADDR) && (address < PPU_REGISTERS_FINAL_ADDR)){
+        address &= 0x2007;
+        return readPPU(address);
+    }
+
     // ROM
     if ((address >= ROM_INIT_ADDR) && (address < ROM_FINAL_ADDR))
     {
@@ -1025,7 +1030,7 @@ void writeCPU(addr address, byte value)
         cpu->ram[address % RAM_SIZE] = value;
     }
 
-    if((address >= PPU_REGISTER_START_ADDR) && (address < PPU_REGISTERS_FINAL_ADDR)){
+    if((address >= PPU_REGISTERS_START_ADDR) && (address < PPU_REGISTERS_FINAL_ADDR)){
         /*
         There are only 8 PPU register, so every 8 bytes
         is a mirror.

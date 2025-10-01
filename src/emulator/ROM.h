@@ -9,6 +9,7 @@
 
 #ifndef ROM_SIZE
 #define ROM_SIZE 0x8000
+#define HEADER_SIZE 0x10
 #define HEADERED_ROM_SIZE 0x8010
 #endif
 

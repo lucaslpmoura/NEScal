@@ -2,7 +2,7 @@
 #define WINDOW_H
 
 #include "PPU.h"
-#include "types.h";
+#include "types.h"
 
 #include "canvas.h"
 
