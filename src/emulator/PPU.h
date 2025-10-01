@@ -26,11 +26,13 @@
 #define CHR_DATA_SIZE_BIT 5
 #define HORIZONTAL_MIRRORING_BIT 6
 
+#define NUM_DOTS 341
+#define NUM_SCANLINES 261
+
 typedef struct PPU
 {
     bool WL; // Write Latch
     
-
     addr transferAddr; // Transfer Address
     addr tempAddr; //  Temporary Addres (used to read the VRAM Address)
     
@@ -40,17 +42,40 @@ typedef struct PPU
 
     byte *vRam;
     addr vRamAddr; // VRAM Address
-    bool vRamInc32Mode; // Increase by 32 flag
+   
 
     byte *chrData;
     byte *palleteRam;
 
     byte readBuffer;
+
+    int dot; // X position of the scan beam
+    int scanLine; // Y position of the scan beam
+    bool vBlank; // Vblank Flag (true if ppu is in vblank)
+
+    // PPUMASK flags
+    bool mask8pxMaskBG;
+    bool mask8pxMaskSprites;
+    bool renderBG;
+    bool renderSprites;
+
+    // PPUCTRL Fields
+    byte nametableSelect;
+    bool vRamInc32Mode; // Vram Increase by 32 flag
+    bool spritePatternTable;
+    bool bgPatternTable; // Background Pattern Table
+    bool use8x16Sprites;
+    bool enableNMI;
 } PPU;
 
 extern PPU *ppu;
 
 void initPPU(ROM *rom);
+
+void emulatePPU();
+
+void updatePPUMASKFlags(byte value);
+void checkVBlank();
 
 byte readPPU(addr address);
 void writePPU(addr address, byte value);

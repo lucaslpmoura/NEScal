@@ -69,13 +69,16 @@ void drawTest(cairo_t *cr){
       for(int column = 0; column < 32; column++){
         for(int y = 0; y < 8; y++){
           for(int x = 0 ; x < 8; x++){
-            byte lowByte = ppu->chrData[ppu->vRam[column + row * 32] * 16 + y];
-            byte highByte = ppu->chrData[ppu->vRam[column + row * 32] * 16 + 8 + y];
+            
+            int useSecondPatternTable = ppu->bgPatternTable ? 0x1000 : 0x00;
+            byte lowByte = ppu->chrData[ppu->vRam[column + row * 32] * 16 + y + useSecondPatternTable];
+            byte highByte = ppu->chrData[ppu->vRam[column + row * 32] * 16 * 8 + y + useSecondPatternTable];
+            
             for(int x = 0; x < 8; x++){
-              int TwoBit = ((lowByte >> (7-x)) & 1) == 1 ? 1 : 0;
-              TwoBit += ((highByte >> (7-x)) & 1) == 1 ? 2 : 0;
+              int twoBit = ((lowByte >> (7-x)) & 1) == 1 ? 1 : 0;
+              twoBit += ((highByte >> (7-x)) & 1) == 1 ? 2 : 0;
 
-              double gray = TwoBit / 3.0;
+              double gray = twoBit / 3.0;
               cairo_set_source_rgb(cr, gray, gray, gray);
               int px = x + column * 8;
               int py = y + row * 8;

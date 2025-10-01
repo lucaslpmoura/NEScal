@@ -9,7 +9,7 @@
 
 
 
-#define BRK 0x00 // Break
+#define BRK_NMI 0x00 // Break and Non-Maskable Interrupt
 #define RTI 0x40 // Return from Interrupt
 
 

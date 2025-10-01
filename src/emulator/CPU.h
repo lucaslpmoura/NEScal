@@ -29,6 +29,9 @@ typedef struct CPU{
     bool OVF; // OVERFLOW Flag
     bool NEG; // Negative Flag
 
+    bool NMI; // Non-Maskable Interrupt
+    bool NMILevel;
+
     PPU *ppu;
     RAM ram;
     ROM rom;

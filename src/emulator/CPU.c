@@ -28,20 +28,36 @@ void initCPU(RAM *ram, ROM *rom, PPU *ppu)
     cpu->rom = *rom;
     cpu->ppu = ppu;
 
+    cpu->NMI = false;
+    cpu->NMILevel = false;
+
 }
 
 
 void emulateCPU()
 {
-    byte opcode = readCPU(cpu->PC);
-    printTraceLog(opcode);
+    bool prevNMILevel = cpu->NMILevel;
+    cpu->NMILevel = ppu->enableNMI && ppu->vBlank;
+    if(!prevNMILevel && cpu->NMILevel){
+        cpu->NMI = true;
+    }
 
-     
-    cpu->PC++;
-
+    byte opcode;
+    
+    /*
+        If there is no NMI, read the opcode and increment PC.
+        If the IS an NMI, force opcode 0x00.
+    */
+    if(!cpu->NMI){
+        readCPU(cpu->PC);
+        printTraceLog(opcode);
+        cpu->PC++;
+    }else{
+        opcode = 0x00;
+    }
+    
     int cycles = 0;
 
- 
     switch (opcode)
     {
     // Halt (Unnoficial)
@@ -54,18 +70,23 @@ void emulateCPU()
         cycles = 2;
         break;
 
-    // Break
-    case BRK: {
-        cpu->PC++;
+    // Break and NMI
+    case BRK_NMI: {
+        if(!cpu->NMI) cpu->PC++;
 
         push((byte)(cpu->PC >> 8)); // PC High Byte
         push(cpu->PC);              // PC Low Byte
         pushProcessorFlags();
 
-        byte low = readCPU(0xFFFE);
-        byte high = readCPU(0xFFFF);
+        addr low_addr = cpu->NMI ? 0xFFFA : 0xFFFE;
+        addr high_addr = cpu->NMI ? 0xFFFB : 0xFFFF;
+
+        byte low = readCPU(low_addr);
+        byte high = readCPU(high_addr);
 
         cpu->PC = (addr)((high * 0x100) + low);
+
+        cpu->NMI = false;
         cycles = 7;
         break;
 
@@ -973,6 +994,13 @@ void emulateCPU()
         break;
     }
 
+    while(cycles > 0){
+        cycles--;
+        emulatePPU();
+        emulatePPU();
+        emulatePPU();
+    }
+
 }
 
 void resetCPU(){
@@ -1067,7 +1095,7 @@ void pushProcessorFlags()
     value += (byte)(cpu->ZER ? 0x02 : 0);
     value += (byte)(cpu->IND ? 0x04 : 0);
     value += (byte)(cpu->DEC ? 0x08 : 0);
-    value += 0x10;
+    value += (byte)(!cpu->NMI ? 0x10 : 0);
     value += 0x20;
     value += (byte)(cpu->OVF ? 0x40 : 0);
     value += (byte)(cpu->NEG ? 0x80 : 0);
